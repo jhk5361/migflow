@@ -1,0 +1,12 @@
+[submodule "linux-kernels/tpp/linux"]
+	path = linux-kernels/tpp/linux
+	url = https://github.com/jhk5361/linux-5.13-rc6-tpp.git
+[submodule "linux-kernels/autotiering/linux"]
+	path = linux-kernels/autotiering/linux
+	url = https://github.com/jhk5361/linux-5.3.18-autotiering.git
+[submodule "linux-kernels/migflow/linux"]
+	path = linux-kernels/migflow/linux
+	url = https://github.com/jhk5361/linux.git
+[submodule "userspace/numactl"]
+	path = userspace/numactl
+	url = https://github.com/jhk5361/numactl.git
