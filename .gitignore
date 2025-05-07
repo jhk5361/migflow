@@ -6,7 +6,6 @@
 *.lo
 *.o
 *.obj
-*.ko
 
 # Precompiled Headers
 *.gch
@@ -32,6 +31,7 @@
 *.out
 *.app
 
+# CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -44,3 +44,9 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+
+# kernel modules
+*.sw*
+*.cmd
+modules.order
+*.ko
