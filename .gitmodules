@@ -10,3 +10,6 @@
 [submodule "userspace/numactl"]
 	path = userspace/numactl
 	url = https://github.com/jhk5361/numactl.git
+[submodule "userspace/daemon/thread-pool"]
+	path = userspace/daemon/thread-pool
+	url = https://github.com/bshoshany/thread-pool
