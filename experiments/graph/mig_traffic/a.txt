@@ -1,0 +1,560 @@
+
+=== ours-td-qd-cb - Silo-TPCC ===
+migrate_0_0: 1958410
+migrate_0_1: 13762839
+migrate_0_2: 3665
+migrate_0_3: 3003138
+migrate_1_0: 3989408
+migrate_1_1: 1353136
+migrate_1_2: 18855665
+migrate_1_3: 6482395
+migrate_2_0: 8563548
+migrate_2_1: 0
+migrate_2_2: 4990216
+migrate_2_3: 20766419
+migrate_3_0: 4346000
+migrate_3_1: 0
+migrate_3_2: 193
+migrate_3_3: 0
+> Promotion traffic: 16899149
+> Demotion traffic: 62874121
+
+=== ours-td-qd-cb - Btree ===
+migrate_0_0: 8079877
+migrate_0_1: 89047282
+migrate_0_2: 4162
+migrate_0_3: 9534218
+migrate_1_0: 11087793
+migrate_1_1: 1329332
+migrate_1_2: 65742256
+migrate_1_3: 9371667
+migrate_2_0: 76388471
+migrate_2_1: 0
+migrate_2_2: 11945643
+migrate_2_3: 7268042
+migrate_3_0: 15908743
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 103385007
+> Demotion traffic: 180967627
+
+=== ours-td-qd-cb - XSBench ===
+migrate_0_0: 2577393
+migrate_0_1: 0
+migrate_0_2: 0
+migrate_0_3: 7498668
+migrate_1_0: 174265
+migrate_1_1: 3510731
+migrate_1_2: 0
+migrate_1_3: 6896204
+migrate_2_0: 764663
+migrate_2_1: 0
+migrate_2_2: 2147368
+migrate_2_3: 4314190
+migrate_3_0: 2185500
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 3124428
+> Demotion traffic: 18709062
+
+=== ours-td-qd-cb - Redis-YCSB ===
+migrate_0_0: 1105141
+migrate_0_1: 22676842
+migrate_0_2: 8
+migrate_0_3: 12581259
+migrate_1_0: 18495564
+migrate_1_1: 4205804
+migrate_1_2: 6454591
+migrate_1_3: 44295551
+migrate_2_0: 8077078
+migrate_2_1: 0
+migrate_2_2: 3082908
+migrate_2_3: 0
+migrate_3_0: 3912843
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 30485485
+> Demotion traffic: 86008251
+
+=== autotiering - Btree ===
+migrate_0_0: 0
+migrate_0_1: 6
+migrate_0_2: 342
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 17187
+migrate_2_0: 0
+migrate_2_1: 15057445
+migrate_2_2: 0
+migrate_2_3: 0
+migrate_3_0: 57
+migrate_3_1: 3515
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 15061017
+> Demotion traffic: 17535
+
+=== autotiering - Redis-YCSB ===
+migrate_0_0: 0
+migrate_0_1: 61
+migrate_0_2: 2079
+migrate_0_3: 0
+migrate_1_0: 79080
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 5237
+migrate_2_0: 132284
+migrate_2_1: 5953849
+migrate_2_2: 0
+migrate_2_3: 0
+migrate_3_0: 25
+migrate_3_1: 6660
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 6171898
+> Demotion traffic: 7377
+
+=== autotiering - XSBench ===
+migrate_0_0: 1662
+migrate_0_1: 0
+migrate_0_2: 2
+migrate_0_3: 0
+migrate_1_0: 1
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 843
+migrate_2_0: 0
+migrate_2_1: 0
+migrate_2_2: 0
+migrate_2_3: 0
+migrate_3_0: 19
+migrate_3_1: 211
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 231
+> Demotion traffic: 845
+
+=== autotiering - Silo-TPCC ===
+migrate_0_0: 0
+migrate_0_1: 49
+migrate_0_2: 576
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 8063
+migrate_2_0: 2
+migrate_2_1: 15053593
+migrate_2_2: 0
+migrate_2_3: 0
+migrate_3_0: 25
+migrate_3_1: 4027
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 15057647
+> Demotion traffic: 8688
+
+=== memtiering-mglru - Redis-YCSB ===
+migrate_0_0: 359308
+migrate_0_1: 0
+migrate_0_2: 301457
+migrate_0_3: 131317
+migrate_1_0: 0
+migrate_1_1: 1902255
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 2
+migrate_2_1: 945
+migrate_2_2: 375982
+migrate_2_3: 0
+migrate_3_0: 2
+migrate_3_1: 625
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 1574
+> Demotion traffic: 432774
+
+=== memtiering-mglru - XSBench ===
+migrate_0_0: 512527
+migrate_0_1: 12
+migrate_0_2: 716
+migrate_0_3: 7758
+migrate_1_0: 712
+migrate_1_1: 23765
+migrate_1_2: 53385
+migrate_1_3: 16618
+migrate_2_0: 76
+migrate_2_1: 46
+migrate_2_2: 160
+migrate_2_3: 0
+migrate_3_0: 106
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 940
+> Demotion traffic: 78489
+
+=== memtiering-mglru - Silo-TPCC ===
+migrate_0_0: 66591
+migrate_0_1: 34
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 2
+migrate_1_1: 801099
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 20
+migrate_2_2: 575940
+migrate_2_3: 0
+migrate_3_0: 17
+migrate_3_1: 487
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 526
+> Demotion traffic: 34
+
+=== memtiering-mglru - Btree ===
+migrate_0_0: 422170
+migrate_0_1: 0
+migrate_0_2: 26146104
+migrate_0_3: 2988351
+migrate_1_0: 0
+migrate_1_1: 957837
+migrate_1_2: 0
+migrate_1_3: 721453
+migrate_2_0: 20152233
+migrate_2_1: 2364
+migrate_2_2: 2444131
+migrate_2_3: 0
+migrate_3_0: 2482652
+migrate_3_1: 1348
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 22638597
+> Demotion traffic: 29855908
+
+=== default - Btree ===
+migrate_0_0: 0
+migrate_0_1: 0
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 0
+migrate_2_2: 357823
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 0
+> Demotion traffic: 0
+
+=== default - Redis-YCSB ===
+migrate_0_0: 1750
+migrate_0_1: 0
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 1291310
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 0
+migrate_2_2: 498362
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 0
+> Demotion traffic: 0
+
+=== default - Silo-TPCC ===
+migrate_0_0: 68872
+migrate_0_1: 0
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 3330
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 0
+migrate_2_2: 394550
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 0
+> Demotion traffic: 0
+
+=== default - XSBench ===
+migrate_0_0: 0
+migrate_0_1: 0
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 0
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 0
+migrate_2_2: 69
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 0
+> Demotion traffic: 0
+
+=== tpp - Btree ===
+migrate_0_0: 221631
+migrate_0_1: 0
+migrate_0_2: 75495905
+migrate_0_3: 0
+migrate_1_0: 53306
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 15656374
+migrate_2_1: 2174
+migrate_2_2: 1716031
+migrate_2_3: 0
+migrate_3_0: 46
+migrate_3_1: 1930
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 15713830
+> Demotion traffic: 75495905
+
+=== tpp - XSBench ===
+migrate_0_0: 859007
+migrate_0_1: 0
+migrate_0_2: 63896373
+migrate_0_3: 0
+migrate_1_0: 116
+migrate_1_1: 106498
+migrate_1_2: 0
+migrate_1_3: 30769259
+migrate_2_0: 1644897
+migrate_2_1: 3299
+migrate_2_2: 0
+migrate_2_3: 0
+migrate_3_0: 206
+migrate_3_1: 1836
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 1650354
+> Demotion traffic: 94665632
+
+=== tpp - Redis-YCSB ===
+migrate_0_0: 1511458
+migrate_0_1: 0
+migrate_0_2: 54718131
+migrate_0_3: 0
+migrate_1_0: 10773
+migrate_1_1: 1491517
+migrate_1_2: 0
+migrate_1_3: 8166494
+migrate_2_0: 6289633
+migrate_2_1: 2594
+migrate_2_2: 260548
+migrate_2_3: 0
+migrate_3_0: 3105
+migrate_3_1: 5516
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 6311621
+> Demotion traffic: 62884625
+
+=== tpp - Silo-TPCC ===
+migrate_0_0: 1641066
+migrate_0_1: 0
+migrate_0_2: 21073225
+migrate_0_3: 0
+migrate_1_0: 70
+migrate_1_1: 816881
+migrate_1_2: 0
+migrate_1_3: 19876650
+migrate_2_0: 3500402
+migrate_2_1: 269
+migrate_2_2: 493768
+migrate_2_3: 0
+migrate_3_0: 54
+migrate_3_1: 4521
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 3505316
+> Demotion traffic: 40949875
+
+=== mtm - Btree ===
+migrate_0_0: 5387315
+migrate_0_1: 55142400
+migrate_0_2: 4162
+migrate_0_3: 0
+migrate_1_0: 10711473
+migrate_1_1: 785737
+migrate_1_2: 33675283
+migrate_1_3: 0
+migrate_2_0: 43597229
+migrate_2_1: 0
+migrate_2_2: 4453268
+migrate_2_3: 5324
+migrate_3_0: 5865836
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 60174538
+> Demotion traffic: 88827169
+
+=== mtm - XSBench ===
+migrate_0_0: 800264
+migrate_0_1: 8481703
+migrate_0_2: 0
+migrate_0_3: 1
+migrate_1_0: 1048487
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 4982587
+migrate_2_1: 0
+migrate_2_2: 4534767
+migrate_2_3: 4664309
+migrate_3_0: 4164324
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 10195398
+> Demotion traffic: 13146013
+
+=== mtm - Redis-YCSB ===
+migrate_0_0: 1900484
+migrate_0_1: 41134231
+migrate_0_2: 5404
+migrate_0_3: 62
+migrate_1_0: 9016684
+migrate_1_1: 950710
+migrate_1_2: 19806805
+migrate_1_3: 0
+migrate_2_0: 43693541
+migrate_2_1: 3
+migrate_2_2: 3187739
+migrate_2_3: 23840003
+migrate_3_0: 2102575
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 54812803
+> Demotion traffic: 84786505
+
+=== mtm - Silo-TPCC ===
+migrate_0_0: 1220634
+migrate_0_1: 11366400
+migrate_0_2: 0
+migrate_0_3: 5580
+migrate_1_0: 219838
+migrate_1_1: 122362
+migrate_1_2: 1176588
+migrate_1_3: 0
+migrate_2_0: 12222299
+migrate_2_1: 0
+migrate_2_2: 4825396
+migrate_2_3: 8313268
+migrate_3_0: 5543667
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 17985804
+> Demotion traffic: 20861836
+
+=== autonuma - Redis-YCSB ===
+migrate_0_0: 1337799
+migrate_0_1: 6956
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 5447
+migrate_1_1: 18179
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 40504
+migrate_2_1: 138
+migrate_2_2: 548863
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 3
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 46092
+> Demotion traffic: 6956
+
+=== autonuma - XSBench ===
+migrate_0_0: 0
+migrate_0_1: 38
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 441
+migrate_1_1: 0
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 3
+migrate_2_1: 2
+migrate_2_2: 576
+migrate_2_3: 0
+migrate_3_0: 36
+migrate_3_1: 0
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 482
+> Demotion traffic: 38
+
+=== autonuma - Silo-TPCC ===
+migrate_0_0: 29329
+migrate_0_1: 11995
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 65668
+migrate_1_1: 3615
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 29
+migrate_2_2: 342517
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 97
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 65794
+> Demotion traffic: 11995
+
+=== autonuma - Btree ===
+migrate_0_0: 0
+migrate_0_1: 1362
+migrate_0_2: 0
+migrate_0_3: 0
+migrate_1_0: 17
+migrate_1_1: 591982
+migrate_1_2: 0
+migrate_1_3: 0
+migrate_2_0: 0
+migrate_2_1: 2207
+migrate_2_2: 428876
+migrate_2_3: 0
+migrate_3_0: 0
+migrate_3_1: 240
+migrate_3_2: 0
+migrate_3_3: 0
+> Promotion traffic: 2464
+> Demotion traffic: 1362

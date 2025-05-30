@@ -1,0 +1,6 @@
+=== 25/36 ===
+Elapsed time: 5.5663 seconds.
+GUPS = 0.0287441488
+Elapsed time: 4.5948 seconds.
+GUPS = 0.0348216861
+=== 25/38 ===

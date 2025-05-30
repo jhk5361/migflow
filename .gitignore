@@ -52,4 +52,4 @@ modules.order
 
 experiments/result/*
 experiments/log/*
-experiments/data/*
+experiments/graph/data/*
