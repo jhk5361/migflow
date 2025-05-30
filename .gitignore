@@ -49,3 +49,7 @@ CMakeUserPresets.json
 *.cmd
 modules.order
 *.ko
+
+experiments/result/*
+experiments/log/*
+experiments/data/*
