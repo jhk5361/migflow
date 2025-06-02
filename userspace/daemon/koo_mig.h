@@ -9,25 +9,15 @@
 #include <vector>
 #include <list>
 #include "my_rb.h"
-#include "BS_thread_pool.hpp"
 
 #define ABORT_WITH_LOG() do { \
     fprintf(stderr, "Abort called at %s:%d\n", __FILE__, __LINE__); \
     abort(); \
 } while(0)
 
-#define MAX_EVENTS 10
 #define PAGE_SIZE 4096UL
 
-#define DEVICE_NAME "/dev/page_tracker"
-#define IOCTL_SET_PID _IOW('a', 1, int)
-#define IOCTL_SET_HOT_BUF _IOW('a', 2, int)
-#define IOCTL_SET_THRESHOLD_WAKEUP _IOW('a', 3, int)
-#define IOCTL_MOVE_RB_TAIL _IOW('a', 4, void *)
-#define IOCTL_GET_RB_STATUS _IOR('a', 5, int)
-#define IOCTL_GET_PERIOD _IOR('a', 6, struct pebs_period)
-
-
+#define MAX_EVENTS 10
 #define EPOLL_TIMEOUT 10
 
 #define MAX_NODES 4
@@ -37,10 +27,8 @@
 #define NR_HIST_BINS 32
 #define HOTNESS_WEIGHT 0.5
 
-//#define COOLING_INTERVAL 150 // 5m, for DAMON
 #define COOLING_INTERVAL 2000000 // for PEBS
 //#define COOLING_INTERVAL 2000 // for PEBS
-//#define MIG_INTERVAL 5 // 10s, for DAMON
 #define PERIOD_INTERVAL 1 // 10s
 			
 #define MIG_INTERVAL 10 // 10s
@@ -69,8 +57,7 @@
 
 #define USER_PEBS 3 // start from 3
 					
-#define PROF_DAMON 0
-#define PROF_PEBS 1
+#define PROF_PEBS 0
 
 struct mig_stat {
 	uint64_t nr_alloc_iters;
@@ -120,11 +107,8 @@ struct demo_stat {
 };
 
 struct alloc_metadata_t {
-	//std::vector<std::pair<void *, struct page_profile *>> pages_to_move;
-	//std::unordered_map<void *, int> g_pages_to_move;
 	std::list<std::pair<void *, struct page_profile *>> pages_to_move_lists[MAX_NODES];
 	std::unordered_map<void *, std::list<std::pair<void *, struct page_profile *>>::iterator> pages_to_move_dict;
-	//std::map<void *,int> moved_page_map;
 	std::map<void *,int> unique_pages;
 };
 
@@ -136,8 +120,6 @@ struct hist_bin {
 	unsigned long nr_accesses;
 	long nr_added;
 	long nr_deleted;
-	//std::set<void *> va_set;
-	//std::unordered_map<void *, struct page_profile *> va_set;
 	std::unordered_map<void *, std::list<std::pair<void *, struct page_profile *>>::iterator> va_set;
 	std::list<std::pair<void *, struct page_profile *>> va_lists[MAX_NODES];
 	std::unordered_map<void *, struct page_profile *> updated_va_set;
@@ -147,33 +129,11 @@ struct hist_bin {
 struct page_profile {
 	uint64_t hotness;
 	int age;
-	//unsigned int nr_accesses;
 	int node;
 	int next_node;
 	int bin_idx;
-	// int rw_ratio;
 };
 
-struct damon_region {
-	unsigned long va;
-	unsigned long nr_pages;
-	unsigned int nr_accesses;
-	unsigned int iter;
-	//bool skip;
-};
-
-struct damon_metadata_t {
-	std::vector<struct damon_region> profiled_regions;
-	std::vector<struct damon_region> total_regions;
-	std::vector<void *> not_mapped_pages;
-	std::unordered_map<void *,struct page_profile *> dained_pages;
-	int profile_iter;
-	int cooling_interval;
-	bool need_cooling;
-	unsigned int cur_iter;
-	//std::map<void *,int> moved_page_map;
-	std::map<void *,int> unique_pages;
-};
 
 struct pebs_va {
 	int nr_accesses;
@@ -195,19 +155,14 @@ struct promo_path {
 
 struct pebs_metadata_t {
 	std::unordered_map<void *, struct pebs_va> profiled_va;
-	//std::unordered_map<void *> not_mapped_pages;
 	std::unordered_map<void *,struct page_profile *> drained_pages;
 	int profile_iter;
 	int cooling_interval;
 	bool need_cooling;
 	unsigned int cur_iter;
-	//std::map<void *,int> moved_page_map;
 	std::map<void *,int> unique_pages;
 	struct pebs_period period;
 	uint64_t period_iter;
-	//std::vector<std::vector<uint64_t>> promo_threshold;
-	//std::vector<struct promo_path> promo_order;
-
 };
 
 
@@ -238,17 +193,10 @@ struct koo_mig {
 	struct rb_head_t *rb[MAX_NR_RB];
 	struct rb_data_t *rb_buf[MAX_NR_RB];
 	struct alloc_metadata_t alloc_meta;
-	struct damon_metadata_t damon_meta;
 	struct pebs_metadata_t pebs_meta;
 	int profiled_accesses;
 	std::unordered_map<void *,struct page_profile *> g_page_map;
-	pthread_mutex_t g_lock;
-	pthread_rwlock_t g_rwlock;
-	//std::priority_queue<std::pair<unsigned int, 
-	unsigned long long nr_cur_tier_pages[MAX_NODES];
 	unsigned long long nr_cap_tier_pages[MAX_NODES];
-	long long nr_free_tier_pages[MAX_NODES];
-	//std::unordered_map<void *,
 	struct hist_bin hist[NR_HIST_BINS];
 
 	pthread_t tid;
@@ -264,8 +212,6 @@ struct koo_mig {
 	struct demo_stat dstat;
 	struct demo_stat oddstat;
 	struct demo_stat qdstat;
-
-	BS::thread_pool pool;
 };
 
 #define PRINT_NONE 0
@@ -276,5 +222,6 @@ struct koo_mig {
 
 int koo_mig_init (int, void *); // TODO: add interval, etc, .. later
 void destroy_koo_mig (void);
+void koo_mig_print (int level, const char *fmt, ...);
 
 #endif

@@ -6,8 +6,6 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/epoll.h>
 #include <sys/mman.h>
 #include <errno.h>
 #include <numa.h>
@@ -24,7 +22,7 @@
 #include <cstdarg>
 #include <unordered_set>
 #include <signal.h>
-#include "utils.h"
+#include "profile.h"
 #include "sampler.h"
 using namespace std;
 using namespace std::chrono;
@@ -47,8 +45,7 @@ static int cost_mc[MAX_NODES][MAX_NODES] = {
 	{3005, 2736, 2686, INT_MAX}};
 */
 
-
-static inline void koo_mig_print(int level, const char *format, ...) {
+void koo_mig_print(int level, const char *format, ...) {
 	    if (level <= kmig.opts.verbose_level) {
         va_list args;
         va_start(args, format);
@@ -244,7 +241,7 @@ static inline uint64_t __calc_hotness_general(uint64_t old_hotness, unsigned int
 	return old_hotness + (uint64_t)nr_accesses;
 }
 
-static inline uint64_t calc_hotness(uint64_t old_hotness, unsigned int nr_accesses, int age_diff, double weight, bool is_pebs) {
+static inline uint64_t calc_hotness(uint64_t old_hotness, unsigned int nr_accesses, int age_diff, double weight, bool is_pebs = false) {
 	// hotness calculation for the cost benefit promotion
 	if (kmig.opts.do_cb_promo && is_pebs) 
 		nr_accesses = nr_accesses * kmig.pebs_meta.period.read;
@@ -433,128 +430,6 @@ int __move_pages(int pid, int count, void **target_pages, int *nodes, int *statu
 	return moved_pages;
 }
 
-#if 0
-int move_pages_alloc(struct alloc_metadata_t &alloc_meta, void **target_pages, int *nodes, int *status) {
-	int count = 0;
-	int pid = kmig.pid;
-
-	if (!alloc_meta.pages_to_move_list.size())
-		return 0;
-
-	int alloc_target;
-
-	long long nr_free_pages[MAX_NODES];
-
-	static unsigned long long nr_try_pages = 0;
-	static unsigned long long nr_successes_pages = 0;
-	static unsigned long long nr_err_pages = 0;
-	static unsigned long long nr_not_expected_pages = 0;
-	static unsigned long long nr_alloc_pages[MAX_NODES] = {0,};
-
-    auto start = high_resolution_clock::now();
-
-	for (int i = 0; i < MAX_NODES; i++) {
-		nr_free_pages[i] = get_numa_nr_free_pages(i) - (long long)NR_MARGIN_PAGES;
-	}
-
-	unsigned long nr_pages_to_move = min(NR_DEMOTE_PAGES, (unsigned long)alloc_meta.pages_to_move_list.size());
-
-	alloc_target = MAX_NODES - 1;
-	while (alloc_target >= 0) {
-		//if (nr_free_pages[alloc_target] - (long long)alloc_meta.pages_to_move.size() >= 0)
-		if (nr_free_pages[alloc_target] - (long long)nr_pages_to_move >= 0)
-			break;
-		alloc_target--;
-	}
-
-	auto it = alloc_meta.pages_to_move_list.begin();
-	//while (it != alloc_meta.pages_to_move_list.end() && count < nr_pages_to_move) {
-	while (count < (int)nr_pages_to_move) {
-		target_pages[count] = it->first;
-		nodes[count] = alloc_target;
-		status[count] = INT_MIN;
-		it++;
-		count++;
-	}
-
-	/*
-	for (auto it = alloc_meta.pages_to_move_list.begin(); it != alloc_meta.pages_to_move_list.end() && nr_pages_; it++) {
-		target_pages[count] = it->first;
-		nodes[count] = alloc_target;
-		status[count] = INT_MIN;
-		count++;
-	}
-	*/
-
-	nr_try_pages += count;
-	kmig.astat.nr_try_pages += count;
-
-	int nr_moved = __move_pages(pid, count, target_pages, nodes, status);
-
-	kmig.astat.nr_moved_pages += nr_moved;
-
-	it = alloc_meta.pages_to_move_list.begin();
-	for (int i = 0; i < count; i++, it++) {
-		if (status[i] == INT_MAX) {
-			continue;
-		} else if (status[i] == nodes[i]) {
-			//kmig.mstat.nr_alloc_move_success++;
-			nr_successes_pages++;
-			nr_alloc_pages[nodes[i]]++;
-			kmig.astat.nr_successed_pages++;
-			kmig.astat.nr_alloc_move_pages[nodes[i]]++;
-			/*
-			kmig.astat.nr_move_from_to[alloc_meta.pages_to_move[i].second->node][nodes[i]]++;
-			alloc_meta.pages_to_move[i].second->node = status[i];
-			*/
-			kmig.astat.nr_move_from_to[it->second->node][nodes[i]]++;
-			it->second->node = status[i];
-			//alloc_meta.pages_to_move.erase(target_pages[i]);
-		} else if (status[i] < 0) {
-			//alloc_meta.pages_to_move[i].second->node = NONE_PAGE;
-			it->second->node = status[i];
-			nr_err_pages++;
-			if (status[i] != -EFAULT && status[i] != -ENOENT) {
-				//alloc_meta.pages_to_move[target_pages[i]]++;
-				//kmig.mstat.nr_alloc_move_err_retry++;
-			} else {
-				//alloc_meta.pages_to_move.erase(target_pages[i]);
-			}
-		} else {
-			nr_not_expected_pages++;
-			//alloc_meta.pages_to_move[i].second->node = status[i];
-			it->second->node = status[i];
-			//alloc_meta.pages_to_move[target_pages[i]]++;
-			//kmig.mstat.nr_alloc_move_retry++;
-		}
-	}
-
-	count = 0;
-	while (count < (int)nr_pages_to_move) {
-		it = alloc_meta.pages_to_move_list.begin();
-		alloc_meta.pages_to_move_dict.erase(it->first);
-		alloc_meta.pages_to_move_list.pop_front();
-		count++;
-	}
-
-
-	//alloc_meta.pages_to_move.clear();
-
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-
-	koo_mig_print(PRINT_KEY, "[Alloc: %ldms] nr_try_pages: %llu, nr_successes_pages: %llu, nr_err_pages: %llu, nr_not_expected_pages: %llu\n", duration.count(), nr_try_pages, nr_successes_pages, nr_err_pages, nr_not_expected_pages);
-
-	koo_mig_print(PRINT_KEY, "nr_alloc_pages (per node)\n");
-	for (int i = 0; i < MAX_NODES; i++) {
-		koo_mig_print(PRINT_KEY, "%llu ", nr_alloc_pages[i]);
-	}
-	koo_mig_print(PRINT_KEY, "\n");
-
-	return nr_moved;
-}
-#endif
-
 int drain_rb_alloc (rb_head_t *rb, rb_data_t *rb_buf, struct alloc_metadata_t &alloc_meta) {
 	int head, tail, len, rbuf_idx;
 	struct rb_data_alloc_t rb_alloc;
@@ -618,27 +493,27 @@ int drain_rb_alloc (rb_head_t *rb, rb_data_t *rb_buf, struct alloc_metadata_t &a
 		nr_alloc_pages[rb_alloc.node]++;
 		kmig.astat.nr_alloc_pages[rb_alloc.node]++;
 
+		// if the address is obtained first,
+		// insert it to global page map.
+		// if not, update the corresponding page map entry
 		it = kmig.g_page_map.find((void*)va);
 		if (it == kmig.g_page_map.end()) {
 			page_info = new page_profile;
 			kmig.g_page_map.insert({(void*)va, page_info});
 			page_info->bin_idx = -1;
 
-			new_hotness = calc_hotness(UINT64_MAX, last_accessed, 0, HOTNESS_WEIGHT, false);
+			new_hotness = calc_hotness(UINT64_MAX, last_accessed, 0, HOTNESS_WEIGHT);
 			new_node = rb_alloc.node;
-			//new_hotness = calc_hotness(old_hotness, last_accessed, page, cur_age - page_info->age, HOTNESS_WEIGHT);
 		} else {
 			nr_existing_pages++;
 
 			page_info = it->second;
 
 			old_hotness = page_info->hotness;
-			new_hotness = calc_hotness(old_hotness, last_accessed, cur_age - page_info->age, HOTNESS_WEIGHT, false);
+			new_hotness = calc_hotness(old_hotness, last_accessed, cur_age - page_info->age, HOTNESS_WEIGHT);
 
 			old_node = page_info->node;
 			new_node = rb_alloc.node;
-
-			//new_hotness = calc_hotness(old_hotness, last_accessed, cur_age - page_info->age, HOTNESS_WEIGHT);
 		}
 
 		auto it = alloc_meta.pages_to_move_dict.find((void*)va);
@@ -650,6 +525,8 @@ int drain_rb_alloc (rb_head_t *rb, rb_data_t *rb_buf, struct alloc_metadata_t &a
 			alloc_meta.pages_to_move_dict.erase(it);
 		}
 
+		// if the allocated page was not accessed,
+		// it is inserted into a quick demotion fifo queue
 		if (!last_accessed) {
 			nr_not_accessed_pages++;
 			kmig.astat.nr_cold_pages++;
@@ -682,14 +559,6 @@ int drain_rb_alloc (rb_head_t *rb, rb_data_t *rb_buf, struct alloc_metadata_t &a
 			}
 			update_hist(va, old_hotness, new_hotness, old_node, new_node, page_info, kmig.hist);
 		}
-
-		/*
-		if (kmig.opts.do_quick_demotion) { // only store the entry in qd map
-			page_info->bin_idx = -1;
-		} else {
-		}
-		*/
-
 	}
 
 	kmig.astat.nr_iters++;
@@ -707,59 +576,6 @@ int drain_rb_alloc (rb_head_t *rb, rb_data_t *rb_buf, struct alloc_metadata_t &a
 	}
 	koo_mig_print(PRINT_DEBUG_MORE, "\n");
 
-
-	return len;
-}
-
-
-int drain_rb_damon (rb_head_t *rb, rb_data_t *rb_buf, struct damon_metadata_t &damon_meta) {
-	int head, tail, len, rbuf_idx;
-	unsigned long va;
-	struct rb_data_damon_t ddata;
-	head = rb->head;
-	tail = rb->tail;
-	len = (head + rb->size - tail) % rb->size;
-
-	unsigned long total_nr_accesses = 0;
-	unsigned long wss = 0, rss = 0;
-	unsigned int max_nr_accesses = 0;
-
-	auto start = high_resolution_clock::now();
-
-	unsigned int iter = UINT_MAX;
-
-	for (int i = 0; i < len; i++) {
-		rbuf_idx = (tail + i) % rb->size;
-		va = rb_buf[rbuf_idx].data.rb_damon.va;
-		ddata = rb_buf[rbuf_idx].data.rb_damon;
-
-		if (va % PAGE_SIZE) {
-			koo_mig_print(PRINT_NONE, "Not aligned %ld\n", va);
-			continue;
-		}
-		
-		damon_meta.profiled_regions.push_back({ddata.va, (unsigned long)ddata.nr_pages, ddata.nr_accesses, ddata.iter});
-
-		iter = min(iter, ddata.iter);
-
-		if (ddata.nr_accesses)
-			wss += ddata.nr_pages * PAGE_SIZE;
-
-		max_nr_accesses = max(max_nr_accesses, ddata.nr_accesses);
-
-		rss += ddata.nr_pages * PAGE_SIZE;
-		total_nr_accesses += ddata.nr_accesses;
-	}
-	//kmig.mstat.nr_alloc_drains += len;
-	//kmig.mstat.nr_alloc_iters++;
-	
-	damon_meta.cur_iter = iter;
-	
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-
-
-	koo_mig_print(PRINT_DEBUG, "[Damon drain: %ldms] nr_regions: %d, wss: %luKB out of %luKB, nr_accesses: %lu, max_nr_accesses: %u\n", duration.count(), len, wss/1024, rss/1024, total_nr_accesses, max_nr_accesses);
 
 	return len;
 }
@@ -816,14 +632,10 @@ int drain_rb_pebs (rb_head_t *rb, rb_data_t *rb_buf, struct pebs_metadata_t &peb
 }
 
 int drain_user_pebs (struct pebs_metadata_t &pebs_meta) {
-	//unsigned long va;
-
-	//unsigned long total_nr_accesses = 0;
 	static unsigned long acc_nr_profiled = 0;
 
 	unordered_map<void *,struct pebs_va>::iterator it;
 	list<pair<void *, struct pebs_va>> sample_list;
-	//struct pebs_va pva;
 
 	auto start = high_resolution_clock::now();
 
@@ -860,10 +672,6 @@ int drain (int type, rb_head_t **rb, rb_data_t **rb_buf) {
 			ret = drain_rb_alloc(rb[type], rb_buf[type], kmig.alloc_meta);
 			is_rb = true;
 			break;
-		case RB_DAMON:
-			ret = drain_rb_damon(rb[type], rb_buf[type], kmig.damon_meta);
-			is_rb = true;
-			break;
 		case RB_PEBS:
 			ret = drain_rb_pebs(rb[type], rb_buf[type], kmig.pebs_meta);
 			is_rb = true;
@@ -888,374 +696,6 @@ int drain (int type, rb_head_t **rb, rb_data_t **rb_buf) {
 	return ret;
 }
 
-bool compare_regions(const damon_region &a, const damon_region &b) {
-    return a.va < b.va;
-}
-
-vector<struct damon_region> merge_regions(vector<struct damon_region> &regions) {
-    if (regions.empty()) return regions;
-
-    vector<struct damon_region> merged;
-    std::sort(regions.begin(), regions.end(), compare_regions);
-
-    struct damon_region current = regions[0];
-
-    for (size_t i = 1; i < regions.size(); ++i) {
-        if (current.va + current.nr_pages * PAGE_SIZE >= regions[i].va) {
-            // Overlapping or continuous regions
-            current.nr_pages = std::max(current.va + current.nr_pages * PAGE_SIZE, regions[i].va + regions[i].nr_pages * PAGE_SIZE) - current.va;
-			current.nr_pages /= PAGE_SIZE;
-        } else {
-            // Non-overlapping region
-            merged.push_back(current);
-            current = regions[i];
-        }
-    }
-    merged.push_back(current);
-
-    return merged;
-}
-
-void print_damon_regions(vector<struct damon_region> &regions) {
-	unsigned long total_nr_pages = 0;
-	koo_mig_print(PRINT_NONE, "DAMON REGIONS\n");
-	for (auto region : regions) {
-		koo_mig_print(PRINT_NONE, "region va: %lu, nr_pages: %lu (%luKB)\n", region.va, region.nr_pages, region.nr_pages * PAGE_SIZE / 1024);
-		total_nr_pages += region.nr_pages;
-	}
-	koo_mig_print(PRINT_NONE, "total regions: %lu (%luKB)\n", total_nr_pages, total_nr_pages * PAGE_SIZE / 1024);
-}
-
-int __profile_pages_damon_split(vector<struct damon_region> profiled_regions, int cur_age) {
-	if(profiled_regions.empty())
-		return 0;
-
-	unsigned long total_tried_pages = 0;
-	unsigned long total_added_pages = 0;
-	unsigned long total_accessed_pages = 0;
-	unsigned long total_quiry_pages = 0;
-	unsigned long total_not_mapped_pages = 0;
-
-	unsigned long va;
-	unordered_map<void *,struct page_profile *>::iterator it;
-	uint64_t old_hotness, new_hotness;
-	int old_age, old_node, new_node;
-	struct page_profile *page_info;
-
-	// va, nr_accesses
-	vector<pair<void *,int>> not_mapped_pages; 
-	// va, old_hotness, page_profile 
-	vector<tuple<void *, unsigned int, struct page_profile *, int>> post_proc;
-
-    auto start = high_resolution_clock::now();
-	
-	pthread_rwlock_rdlock(&kmig.g_rwlock);
-	for (auto &region : profiled_regions) {
-		if (!region.nr_accesses)
-			continue;
-
-		//printf("split region %d va: %lu, nr_pages: %lu\n", gettid(), region.va, region.nr_pages);
-
-		for (unsigned long i = 0; i < region.nr_pages; i++) {
-			total_tried_pages++;
-			total_accessed_pages++;
-
-			va = region.va + i * PAGE_SIZE;
-
-			/*
-			auto res = dbg.insert(va);
-			if (res.second == false)
-				abort();
-			*/
-
-			old_hotness = new_hotness = UINT64_MAX;
-			old_node = new_node = UNKNOWN_NODE;
-
-			it = kmig.g_page_map.find((void*)va);
-			if (it == kmig.g_page_map.end()) {
-				total_not_mapped_pages++;
-				not_mapped_pages.push_back({(void *)va, region.nr_accesses});
-				page_info = NULL;
-				continue;
-			}
-
-			page_info = it->second;
-			old_hotness = page_info->hotness;
-			old_age = page_info->age;
-			old_node = page_info->node;
-
-			if (old_node == NONE_PAGE) {
-				new_hotness = UINT_MAX;
-				//kmig.g_page_map.erase(it->first);
-				//delete page_info;
-				//page_info = NULL;
-			} else {
-				new_hotness = calc_hotness(old_hotness, region.nr_accesses, cur_age - old_age, HOTNESS_WEIGHT, false);
-			}
-
-			//if (page_info)
-			*page_info = (struct page_profile) {new_hotness, cur_age, page_info->node, NO_MIG, page_info->bin_idx};
-
-			post_proc.push_back({(void *)va, old_hotness, page_info, old_node});
-
-			//update_hist(va, old_hotness, new_hotness, page_info, kmig.hist);
-		}
-	}
-	pthread_rwlock_unlock(&kmig.g_rwlock);
-
-	int nr_not_mapped = not_mapped_pages.size();
-	void **target_pages = (void **)malloc(sizeof(void *) * nr_not_mapped);
-	int *status = (int *)malloc(sizeof(int) * nr_not_mapped);
-	for (int i = 0; i < nr_not_mapped; i++) {
-		target_pages[i] = not_mapped_pages[i].first;
-		status[i] = INT_MAX;
-	}
-	__move_pages(kmig.pid, nr_not_mapped, target_pages, NULL, status);
-
-	pthread_rwlock_wrlock(&kmig.g_rwlock);
-	for (int i = 0; i < nr_not_mapped; i++) {
-		if (status[i] < 0 || status[i] == INT_MAX)
-			continue;
-
-		total_added_pages++;
-
-		page_info = new page_profile;
-		page_info->node = status[i];
-		page_info->age = cur_age;
-		page_info->next_node = NO_MIG;
-		page_info->bin_idx = -1;
-		new_hotness = calc_hotness(UINT64_MAX, not_mapped_pages[i].second, 0, HOTNESS_WEIGHT, false);
-		page_info->hotness = new_hotness;
-		kmig.g_page_map.insert({not_mapped_pages[i].first, page_info});
-		update_hist((unsigned long )not_mapped_pages[i].first, UINT64_MAX, new_hotness, UNKNOWN_NODE, page_info->node, page_info, kmig.hist);
-	}
-
-	for (auto &page : post_proc) {
-		page_info = get<2>(page);
-		old_node = get<3>(page);
-		if (page_info->node == NONE_PAGE) {
-			update_hist((unsigned long)get<0>(page), get<1>(page), page_info->hotness, old_node, page_info->node, NULL, kmig.hist);
-			kmig.g_page_map.erase(get<0>(page));
-			delete page_info;
-		} else {
-			update_hist((unsigned long)get<0>(page), get<1>(page), page_info->hotness, old_node, page_info->node, page_info, kmig.hist);
-		}
-	}
-	pthread_rwlock_unlock(&kmig.g_rwlock);
-
-	free(target_pages);
-	free(status);
-
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-
-	koo_mig_print(PRINT_KEY, "[Damon profile split: %ldms] total_tried_pages: %lu, total_added_pages: %lu total_accessed_pages: %lu, total_quiry_pages: %lu, total_not_mapped_pages: %lu (%.2f%%)\n", duration.count(), total_tried_pages, total_added_pages, total_accessed_pages, total_quiry_pages, total_not_mapped_pages, (double)total_not_mapped_pages/total_quiry_pages*100);
-
-	return 0;
-}
-
-
-int __profile_pages_damon(struct damon_metadata_t &damon_meta, int cur_age) {
-	int ret = 0;
-	if(damon_meta.profiled_regions.empty())
-		return ret;
-
-	int nr_accesses = 0;
-	static unsigned long total_tried_pages = 0;
-	static unsigned long total_added_pages = 0;
-	static unsigned long total_accessed_pages = 0;
-	static unsigned long total_quiry_pages = 0;
-	static unsigned long total_not_mapped_pages = 0;
-
-	unsigned long va;
-	unordered_map<void *,struct page_profile *>::iterator it;
-	uint64_t old_hotness, new_hotness;
-	int old_age, old_node;
-	struct page_profile *page_info;
-
-    auto start = high_resolution_clock::now();
-	
-
-	/*
-    std::sort(damon_meta.profiled_regions.begin(), damon_meta.profiled_regions.end(), compare_regions);
-
-	for (auto &region : damon_meta.profiled_regions) {
-		bool exists = false;
-		for (auto &cur_region : damon_meta.total_regions) {
-			if (region.va >= cur_region.va && region.va < cur_region.va + cur_region.nr_pages * PAGE_SIZE) {
-				exists = true;
-				region.skip = true;
-				break;
-			}
-		}
-
-		if (!exists) {
-			total_tried_pages += region.nr_pages;
-			damon_meta.total_regions.push_back(region);
-        }
-	}
-
-	// TODO:: update the freed-region also
-	damon_meta.total_regions = merge_regions(damon_meta.total_regions);
-
-	//print_damon_regions(damon_meta.total_regions);
-
-	//for (unsigned int i = 0; i < damon_meta.profiled_regions.size(); i++) {
-	for (auto &region : damon_meta.profiled_regions) {
-		if (region.skip)
-			continue;
-
-		for (unsigned long i = 0; i < region.nr_pages; i++) {
-			va = region.va + i * PAGE_SIZE;
-			it = kmig.g_page_map.find((void*)va);
-			if (it == kmig.g_page_map.end()) {
-				page_info = new page_profile{UINT_MAX, cur_age, NONE_PAGE, NO_MIG};
-				kmig.g_page_map.insert({(void*)va, page_info});
-				total_added_pages++;
-			}
-		}
-	}
-	*/
-
-	for (auto &region : damon_meta.profiled_regions) {
-		if (!region.nr_accesses)
-			continue;
-
-		for (unsigned long i = 0; i < region.nr_pages; i++) {
-			nr_accesses++;
-			total_tried_pages++;
-			total_accessed_pages++;
-
-			va = region.va + i * PAGE_SIZE;
-
-			old_hotness = new_hotness = UINT64_MAX;
-			old_node = UNKNOWN_NODE;
-
-			it = kmig.g_page_map.find((void*)va);
-
-			if (it == kmig.g_page_map.end()) {
-				int node_num = get_numa_node_of_va((void *)va);
-				//int node_num = 0;
-
-				if (node_num < 0) {
-					total_not_mapped_pages++;
-					page_info = NULL;
-				} else {
-					total_added_pages++;
-
-					page_info = new page_profile;
-					page_info->node = node_num;
-					page_info->bin_idx = -1;
-
-					new_hotness = calc_hotness(UINT64_MAX, region.nr_accesses, 0, HOTNESS_WEIGHT, false);
-					kmig.g_page_map.insert({(void*)va, page_info});
-				}
-			} else {
-				page_info = it->second;
-				old_hotness = page_info->hotness;
-				old_age = page_info->age;
-				old_node = page_info->node;
-
-				if (old_node == NONE_PAGE) {
-					new_hotness = UINT64_MAX;
-					kmig.g_page_map.erase(it->first);
-					delete page_info;
-					page_info = NULL;
-				} else {
-					new_hotness = calc_hotness(old_hotness, region.nr_accesses, cur_age - old_age, HOTNESS_WEIGHT, false);
-				}
-			}
-
-			if (page_info)
-				*page_info = (struct page_profile) {new_hotness, cur_age, page_info->node, NO_MIG, page_info->bin_idx};
-
-			update_hist(va, old_hotness, new_hotness, old_node, page_info->node, page_info, kmig.hist);
-		}
-	}
-
-	ret = nr_accesses;
-
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-
-	koo_mig_print(PRINT_KEY, "[Damon profile: %ldms] total_tried_pages: %lu, total_added_pages: %lu total_accessed_pages: %lu, total_quiry_pages: %lu, total_not_mapped_pages: %lu (%.2f%%)\n", duration.count(), total_tried_pages, total_added_pages, total_accessed_pages, total_quiry_pages, total_not_mapped_pages, (double)total_not_mapped_pages/total_quiry_pages*100);
-
-	return ret;
-}
-
-int profile_pages_damon(struct damon_metadata_t &damon_meta, unsigned long long total_nr_pages, int age) {
-	int ret = 0;
-	unsigned long long nr_pages;
-
-	if (total_nr_pages < THPOOL_TH) {
-		ret = __profile_pages_damon(damon_meta, age);
-	} else {
-		vector<struct damon_region> profiled_regions;
-
-		vector<struct damon_region> cur_iter_regions;
-
-		for (unsigned int i = 0; i < damon_meta.profiled_regions.size();) {
-			auto r = damon_meta.profiled_regions[i];
-
-			//printf("r iter: %u, cur_iter: %u\n", r.iter, kmig.damon_meta.cur_iter);
-
-			if (r.iter == damon_meta.cur_iter) {
-				cur_iter_regions.push_back(r);
-				i++;
-
-				if (i < damon_meta.profiled_regions.size())
-					continue;
-			}
-
-			//printf("i: %u, damon regions size: %lu\n", i, kmig.damon_meta.profiled_regions.size());
-
-			nr_pages = 0;
-
-			for (unsigned int j = 0; j < cur_iter_regions.size();) {
-				auto &region = cur_iter_regions[j];
-
-				if ((region.nr_accesses == 0 || region.nr_pages > MAX_NR_PAGES)) {
-					j++;
-					if (j < cur_iter_regions.size()) {
-						continue;
-					}
-				}
-
-				if ((region.nr_accesses && region.nr_pages <= MAX_NR_PAGES) && (region.nr_pages + nr_pages <= THPOOL_TH || nr_pages == 0)) {
-					profiled_regions.push_back(region);
-					nr_pages += region.nr_pages;
-					j++;
-
-					if (j < cur_iter_regions.size())
-						continue;
-				}
-
-				koo_mig_print(PRINT_DEBUG, "start split regions iter: %u size: %lu, nr_pages: %llu\n", damon_meta.cur_iter, profiled_regions.size(), nr_pages);
-
-				kmig.pool.detach_task(
-						[profiled_regions, age]
-						{
-							return __profile_pages_damon_split(profiled_regions, age);
-						});
-
-				nr_pages = 0;
-				profiled_regions.clear();
-			}
-
-			//printf("queued %d\n", kmig.pool.get_tasks_queued());
-			if (kmig.pool.get_tasks_queued())
-				kmig.pool.wait();
-
-			//dbg.clear();
-
-			damon_meta.cur_iter++;
-			cur_iter_regions.clear();
-		}		
-	}
-
-	return ret;
-}
-
 int profile_pages_pebs(struct pebs_metadata_t &pebs_meta, int cur_age, struct alloc_metadata_t &alloc_meta) {
 	static unsigned long total_tried_pages = 0;
 	static unsigned long total_added_pages = 0;
@@ -1269,7 +709,6 @@ int profile_pages_pebs(struct pebs_metadata_t &pebs_meta, int cur_age, struct al
 
 	int nr_accesses = 0;
 	unordered_map<void *,struct page_profile *>::iterator it;
-	//unordered_map<void *,struct page_profile *>::iterator alloc_it;
 	unordered_map<void *, list<pair<void *, struct page_profile *>>::iterator>::iterator alloc_it;
 	uint64_t old_hotness, new_hotness;
 	int old_age, old_node, new_node;
@@ -1367,25 +806,11 @@ int profile_pages(int type, int age, bool do_mig) {
     auto start = high_resolution_clock::now();
 
 	if (!do_mig) {
-		if (type == RB_DAMON) kmig.damon_meta.profiled_regions.clear();
 		if (type == RB_PEBS) kmig.pebs_meta.profiled_va.clear();
 		return ret;
 	}
 
-	if (type == PROF_DAMON) {
-		unsigned long long total_nr_pages = 0; 
-
-		for (unsigned int i = 0; i < kmig.damon_meta.profiled_regions.size(); i++) {
-			auto region = kmig.damon_meta.profiled_regions[i];
-			if (region.nr_accesses == 0)
-				continue;
-			
-			total_nr_pages += region.nr_pages;
-			ret = region.nr_pages * region.nr_accesses;
-		}
-		profile_pages_damon(kmig.damon_meta, total_nr_pages, age);
-		kmig.damon_meta.profiled_regions.clear();
-	} else if (type == PROF_PEBS) {
+	if (type == PROF_PEBS) {
 		ret = profile_pages_pebs(kmig.pebs_meta, age, kmig.alloc_meta);
 		kmig.pebs_meta.profiled_va.clear();
 	}
@@ -2308,16 +1733,6 @@ int do_migration (int nr_promo_pages, int cur_age, struct hist_bin *hist, void *
 	vector<unordered_map<void *, struct page_profile *>> demo_target_pages(MAX_NODES, unordered_map<void *, struct page_profile *>());
 
 	auto [nr_promo_result_from, nr_promo_result_to] = select_promo_cand(nr_promo_pages, cur_age, hist, promo_target_pages, kmig.nr_cap_tier_pages, do_cb_promo);
-	//auto nr_promo_cand_result = select_promo_cand(nr_promo_pages, cur_age, hist, promo_target_pages, kmig.nr_cap_tier_pages);
-	
-	/*
-	long long nr_free_pages[MAX_NODES];
-
-	for (int i = 0; i < MAX_NODES; i++) {
-	
-	nr_free_pages[i] = get_numa_nr_free_pages(i) - (long long)NR_MARGIN_PAGES;
-	}
-	*/
 
 	int demo_target_nodes[MAX_NODES];
 	for (int i = 0; i < MAX_NODES; i++) {
@@ -2325,7 +1740,6 @@ int do_migration (int nr_promo_pages, int cur_age, struct hist_bin *hist, void *
 	}
 	demo_target_nodes[MAX_NODES-1] = -1;
 
-	//auto [nr_demo_result_from, nr_demo_result_to] = select_demo_cand(kmig.nr_cap_tier_pages, nr_promo_result_to, hist, cur_age, demo_target_nodes, demo_target_pages);
 	auto [nr_demo_result_from, nr_demo_result_to] = select_demo_cand(nr_promo_result_to, hist, cur_age, demo_target_nodes, demo_target_pages, do_quick_demotion);
 
 	int demo_count = 0;
@@ -2341,8 +1755,6 @@ int do_migration (int nr_promo_pages, int cur_age, struct hist_bin *hist, void *
 		promo_count += nr_promo_result_from[i];
 		accum_promo_counts[i] += nr_promo_result_from[i];
 	}
-
-	// reserve pages
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
@@ -2379,11 +1791,7 @@ int do_migration (int nr_promo_pages, int cur_age, struct hist_bin *hist, void *
 	}
 	koo_mig_print(PRINT_KEY, "\n");
 
-	//printf("[Do migration: %ldms] nr_promo_try: %d, nr_promo_successes: %d, nr_promo_failed: %d, nr_promo_failed_expected: %d, nr_promo_failed_not_err: %d\n", duration.count(), count, nr_promo_successes, nr_promo_failed, nr_promo_failed_expected, nr_promo_failed_not_err);
-
-
 	return 0;
-
 }
 
 int do_demotion_if_needed(struct hist_bin *hist, int cur_age, void **target_pages, int *nodes, int *status, bool do_quick_demotion) {
@@ -2452,7 +1860,7 @@ unsigned long cooling_one_bin(struct hist_bin *bin, int cur_age) {
 		old_age = page_info->age;
 		old_hotness = page_info->hotness;
 
-		new_hotness = calc_hotness(old_hotness, 0, cur_age - old_age, HOTNESS_WEIGHT, false);
+		new_hotness = calc_hotness(old_hotness, 0, cur_age - old_age, HOTNESS_WEIGHT);
 		new_bin = get_idx(new_hotness);
 
 		if (kmig.hist + new_bin == bin) {
@@ -2550,21 +1958,18 @@ void *kmig_run (void *arg) {
 	int epoll_fd;
     struct epoll_event ev, events[MAX_EVENTS];
 
-	epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1) {
-        perror("epoll_create1");
-        close(kmig.fd);
-        return (void *)-1;
-    }
 
-    ev.events = EPOLLIN;
-    ev.data.fd = kmig.fd;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, kmig.fd, &ev) == -1) {
-        perror("epoll_ctl: fd");
-        close(kmig.fd);
-        return (void *)-1;
-    }
 
+
+	if (setup_drain() < 0) {
+		close(kmig.fd);
+		return (void *)-1;
+	}
+
+	if (start_profile() < 0) {
+		close(kmig.fd);
+		return (void *)-1;
+	}
 
 	int pid = kmig.pid;
 	koo_mig_print(PRINT_DEBUG, "passed pid: %d, thread pid: %d\n", pid, getpid());
@@ -2572,7 +1977,7 @@ void *kmig_run (void *arg) {
 
 	int nfds, n, flag;
 
-	bool alloc_occured, damon_profile_occured, pebs_profile_occured;
+	bool alloc_occured, pebs_profile_occured;
 
 	bool do_quick_demotion = kmig.opts.do_quick_demotion;
 	bool do_demotion_for_alloc = kmig.opts.do_demotion_for_alloc;
@@ -2594,8 +1999,6 @@ void *kmig_run (void *arg) {
 	auto prev_cooling_time = cur_time;
 	auto duration = duration_cast<milliseconds>(prev_print_time - cur_time);
 
-	//bool need_print, need_migration, need_cooling;
-
 	if (do_cb_promo) {
 		get_pebs_period(kmig.fd);
 		koo_mig_print(PRINT_NONE, "[Initial PEBS period] read: %lu, write: %lu\n", kmig.pebs_meta.period.read, kmig.pebs_meta.period.write);
@@ -2607,12 +2010,10 @@ void *kmig_run (void *arg) {
 	}
 
 	while (1) {
-		//printf("start poll\n");
 		if (kmig.thread_stop)
 			break;
 
-		alloc_occured = damon_profile_occured = pebs_profile_occured = false;
-		//need_print = need_migration = need_cooling = false;
+		alloc_occured = pebs_profile_occured = false;
 
         nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, EPOLL_TIMEOUT);
         if (nfds == -1) {
@@ -2628,12 +2029,6 @@ void *kmig_run (void *arg) {
 				if (flag & RB_TYPE_TO_FLAG(RB_ALLOC)) {
 					drain(RB_ALLOC, kmig.rb, kmig.rb_buf);
 					alloc_occured = true;
-				}
-
-				if (flag & RB_TYPE_TO_FLAG(RB_DAMON)) {
-					drain(RB_DAMON, kmig.rb, kmig.rb_buf);
-					kmig.profile_iter++;
-					damon_profile_occured = true;
 				}
 
 				if (flag & RB_TYPE_TO_FLAG(RB_PEBS)) {
@@ -2654,16 +2049,7 @@ void *kmig_run (void *arg) {
 				kmig.alloc_meta.pages_to_move_lists[i].clear();
 			}
 			kmig.alloc_meta.pages_to_move_dict.clear();
-			/*
-			if (do_quick_demotion)
-				move_pages_alloc(kmig.alloc_meta, target_pages, nodes, status);
-			else
-				kmig.alloc_meta.pages_to_move.clear();
-			*/
 		}
-
-		if (damon_profile_occured)
-			profile_pages(PROF_DAMON, kmig.age, do_mig);
 
 		if (pebs_profile_occured)
 			profile_pages(PROF_PEBS, kmig.age, do_mig);
@@ -2689,11 +2075,6 @@ void *kmig_run (void *arg) {
 		if (do_mig && duration.count() >= MIG_INTERVAL * 1000) {
 			print_hist(kmig.hist, false);
 
-			//if (do_quick_demotion) {
-			//	move_pages_alloc(kmig.alloc_meta, target_pages, nodes, status);
-			//}
-
-
 			do_migration(NR_PROMOTE_PAGES, kmig.age, kmig.hist, target_pages, nodes, status, do_quick_demotion, do_cb_promo);
 			prev_mig_time = cur_time;
 		}
@@ -2708,100 +2089,38 @@ void *kmig_run (void *arg) {
 		}
     }
 
-	close(kmig.fd);
 
 	return NULL;
 }
 
-
 int koo_mig_init(int pid, void *opts) {
-    int fd;
-
 	memcpy(&kmig.opts, opts, sizeof(struct opts));
 
-	koo_mig_print(PRINT_DEBUG, "do_qd: %d do_mig: %d\n", kmig.opts.do_quick_demotion, kmig.opts.do_mig);
-
-    fd = open(DEVICE_NAME, O_RDWR | O_NONBLOCK);
-    if (fd < 0) {
-        perror("Failed to open the device");
-        return -1;
-    }
-
-	for (unsigned long i = 0; i < MAX_NR_RB; i++) {
-		char *mapped_mem = (char *)mmap(NULL, RB_BUF_SIZE + RB_HEADER_SIZE, PROT_READ, MAP_SHARED, fd, 0);
-	    if (mapped_mem == MAP_FAILED) {
-			perror("mmap");
-		    close(fd);
-		    return -1;
-	    }
-
-		kmig.rb[i] = (struct rb_head_t *)mapped_mem;
-		kmig.rb_buf[i] = (struct rb_data_t *)(mapped_mem + RB_HEADER_SIZE);
-
-		koo_mig_print(PRINT_DEBUG, "mmap rb: %lu, rb_buf: %lu\n", (unsigned long)kmig.rb[i], (unsigned long)kmig.rb_buf[i]);
+	// open the device and initialize the ring buffer for draining profiling data
+	if (init_profile() < 0) {
+		perror("Failed to initialize profiling fd: %d, pid: %d\n", kmig.fd, kmig.pid);
+		return -1;
 	}
 
-	kmig.fd = fd;
-	kmig.pid = kmig.opts.is_fork ? get_pid_of_ppid(pid) : pid;
-	koo_mig_print(PRINT_NONE, "is_fork: %d, pid: %d\n", kmig.opts.is_fork, kmig.pid);
-
-	while (kmig.opts.is_fork && kmig.pid == -1) {
-		usleep(1000);
-		kmig.pid = get_pid_of_ppid(pid); 
-	}
-
-	kmig.thread_stop = false;
-
-	int drop_fd;
-	const char* data = "3";
-
-	sync();
-	drop_fd = open("/proc/sys/vm/drop_caches", O_WRONLY);
-	if (write(drop_fd, data, sizeof(char)) < 0)
-		koo_mig_print(PRINT_ERR, "drop_cache failed\n");
-	close(drop_fd);
-
+	// user PEBS, if enabled
 	if (kmig.opts.do_pebs) {
 		sampler_init(kmig.pid);
 	}
 
-	signal(SIGUSR1, sig_handler_usr);
-
-	pthread_mutex_init(&kmig.g_lock, NULL);
-	pthread_rwlock_init(&kmig.g_rwlock, NULL);
-
 	for (int i = 0; i < MAX_NODES; i++) {
-
-		kmig.nr_cap_tier_pages[i] = numa_node_size64(i, &kmig.nr_free_tier_pages[i]) / PAGE_SIZE;
-		kmig.nr_free_tier_pages[i] /= PAGE_SIZE;
-		kmig.nr_cap_tier_pages[i] = kmig.nr_free_tier_pages[i] - NR_MARGIN_PAGES; 
-		koo_mig_print(PRINT_DEBUG, "NUMA %d nr_pages: %llu (%lluGB) free_nr_pages: %lld (%lldGB)\n", i, kmig.nr_cap_tier_pages[i], kmig.nr_cap_tier_pages[i] * PAGE_SIZE / 1024 / 1024 / 1024, kmig.nr_free_tier_pages[i], kmig.nr_free_tier_pages[i] * PAGE_SIZE / 1024 / 1024 / 1024);
+		kmig.nr_cap_tier_pages[i] = get_numa_nr_free_pages(i) - (long long)NR_MARGIN_PAGES;
+		koo_mig_print(PRINT_DEBUG, "NUMA %d nr_pages: %llu (%lluGB)\n", i, kmig.nr_cap_tier_pages[i], kmig.nr_cap_tier_pages[i] * PAGE_SIZE / 1024 / 1024 / 1024);
 	}
 
-	for (int i = 0; i < NR_HIST_BINS; i++) {
-		pthread_mutex_init(&kmig.hist[i].lock, NULL);
-	}
-
+	kmig.thread_stop = false;
+	signal(SIGUSR1, sig_handler_usr);
 	pthread_create(&kmig.tid, NULL, kmig_run, NULL);
 	pthread_setname_np(kmig.tid, "koo_mig");
-	//pthread_detach(tid);
-
-	koo_mig_print(PRINT_NONE, "koo_mig_init pid: %d", kmig.pid);
-
-    if (ioctl(fd, IOCTL_SET_PID, &kmig.pid) < 0) {
-        perror("Failed to set PID");
-        close(fd);
-        return -1;
-    }
-
-	//void *retval;
-	//pthread_join(tid, &retval);
 
     return 0;
 }
 
 void destroy_koo_mig(void) {
-	kmig.pid = -1;
 	kmig.thread_stop = true;
 	pthread_join(kmig.tid, NULL);
 
@@ -2809,7 +2128,8 @@ void destroy_koo_mig(void) {
 		sampler_destroy();
 	}
 
+	destroy_profile();
+
 	print_koo_mig();
 	return;
 }
-

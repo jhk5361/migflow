@@ -53,34 +53,49 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
     struct opts *opts = (struct opts *)state->input;
 
     switch (key) {
-    case 'q':
-        opts->do_quick_demotion = atoi(arg);
-        break;
-
-	case 'd':
-		opts->do_demotion_for_alloc = atoi(arg);
-		break;
-
+        // enable migration
     case 'm':
         opts->do_mig = atoi(arg);
         break;
 
+        // enable quick demotion
+    case 'q':
+        opts->do_quick_demotion = atoi(arg);
+        break;
+
+        // enable cost/benefit promotion
 	case 'c':
 		opts->do_cb_promo = atoi(arg);
 		break;
 
-	case 'p':
-		opts->do_pebs = atoi(arg);
-		break;
 
+        // when the process performs fork()
+        // it will be used to get the child pid
+        // graph500
 	case 'f':
 		opts->is_fork = atoi(arg);
 		break;
 
+        // user PEBS
+        // 0 = disable, 1 = enable
+	case 'p':
+		opts->do_pebs = atoi(arg);
+		break;
+
+        // enable demotion for alloc
+        // 0 = disable, 1 = enable
+	case 'd':
+		opts->do_demotion_for_alloc = atoi(arg);
+		break;
+
+        // verbose level 
+        // 0 = no print, 1 = error, 2 = key metric, 3 = debug, 4 = debug more
 	case 'v':
 		opts->verbose_level = atoi(arg);
 		break;
 
+        // print interval (in seconds)
+        // -1 means no print
 	case 'i':
 		opts->print_itv = atoi(arg);
 		break;
