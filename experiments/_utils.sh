@@ -69,7 +69,7 @@ function func_generate_result() {
 function func_ins_pt() {
 	MODULE=$1
 	info "msec: $2 $3"
-	cd $MOUDULE
+	cd $MODULE
 	./insmod.sh $2 $3
 	cd -
 }

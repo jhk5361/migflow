@@ -17,8 +17,6 @@
 
 #define PAGE_SIZE 4096UL
 
-#define MAX_EVENTS 10
-#define EPOLL_TIMEOUT 10
 
 #define MAX_NODES 4
 
@@ -50,10 +48,6 @@
 #define NO_MIG -1
 #define UNKNOWN_NODE -1
 #define FLAG_QD 16
-
-#define NR_THREADS 16
-#define MAX_NR_PAGES 10000000
-#define THPOOL_TH 200000
 
 #define USER_PEBS 3 // start from 3
 					
@@ -130,10 +124,9 @@ struct page_profile {
 	uint64_t hotness;
 	int age;
 	int node;
-	int next_node;
-	int bin_idx;
+	int next_node; // used for migration
+	int bin_idx; // histogram bin index
 };
-
 
 struct pebs_va {
 	int nr_accesses;
@@ -164,14 +157,6 @@ struct pebs_metadata_t {
 	struct pebs_period period;
 	uint64_t period_iter;
 };
-
-
-/*
-struct demo_target {
-	void *va;
-	unsigned int hot
-};
-*/
 
 struct opts {
 	int idx;

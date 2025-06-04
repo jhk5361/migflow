@@ -16,7 +16,7 @@ SHARED_LIB = libkoo_mig.so
 TARGET_BIN = koo_mig
 
 # Source files
-SRC = koo_mig_inf.cc koo_mig.cc utils.cc sampler.cc
+SRC = koo_mig_inf.cc koo_mig.cc utils.cc profile.cc
 
 # Object files
 OBJ = $(SRC:.cc=.o)

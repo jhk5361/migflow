@@ -45,7 +45,7 @@ CONFIG_NVM="no"
 CONFIG_MULTITIER="no"
 CONFIG_MGLRU="no"
 CONFIG_LAST="no"
-INS_PATH="${SCRIPTDIR}/../linux_kernels/migflow/module"
+INS_PATH="${SCRIPTDIR}/../linux-kernels/migflow/module"
 
 export CONFIG_AUTONUMA
 export CONFIG_MEMTIERING
@@ -368,7 +368,7 @@ while true; do
         --autotiering)
             TEST="autotiering"
             CONFIG_AUTOTIERING="yes"
-			INS_PATH="${SCRIPTDIR}/../linux_kernels/autotiering/module"
+			INS_PATH="${SCRIPTDIR}/../linux-kernels/autotiering/module"
 
             # autonuma should be enabled
             AUTONUMA=AN
@@ -377,7 +377,7 @@ while true; do
 		--tpp)
 			TEST="tpp"
 			CONFIG_TPP="yes"
-			INS_PATH="${SCRIPTDIR}/../linux_kernels/tpp/module"
+			INS_PATH="${SCRIPTDIR}/../linux-kernels/tpp/module"
 			shift 1
 			;;
         --idt)
