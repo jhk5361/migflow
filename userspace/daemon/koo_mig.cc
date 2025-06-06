@@ -422,7 +422,7 @@ vector<struct promo_path> calc_promo_order (bool use_mp, int iter) {
 	koo_mig_print(PRINT_DEBUG, "[Hist min]\n");
 	for (uint64_t i = 0; i < NR_HIST_BINS; i++) {
 		hist_min[i] = pow((uint64_t)2, i) - 1;
-		//hist_min[i] = hist_min[i] * 10 / iter; // accesses per 10 seconds
+		//hist_min[i] = hist_min[i] * 10 / iter; // TODO
 		hist_min[i] = hist_min[i] * 200; // TODO
 		koo_mig_print(PRINT_DEBUG, "%lu ", hist_min[i]);
 	}
@@ -1267,7 +1267,7 @@ int koo_mig_init(int pid, void *opts) {
 	memcpy(&kmig.opts, opts, sizeof(struct opts));
 
 	// open the device and initialize the ring buffer for draining profiling data
-	if (init_profile(pid) < 0) {
+	if (init_profile() < 0) {
 		perror("Failed to initialize profiling fd");
 		return -1;
 	}

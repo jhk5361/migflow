@@ -35,10 +35,12 @@ static int kpebs = 1;
 module_param(kpebs, int, 0644);
 MODULE_PARM_DESC(kpebs, "Enable the kernel PEBS functionality");
 
+// old queue delay
 static int init_msec = 100;
 module_param(init_msec, int, 0644);
 MODULE_PARM_DESC(init_msec, "An integer module parameter");
 
+// young queue delay
 static int delay_msec = 10;
 module_param(delay_msec, int, 0644);
 MODULE_PARM_DESC(delay_msec, "An integer module parameter");
